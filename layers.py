@@ -56,8 +56,7 @@ def scaled_dot_product_attention(
     attention_scores = np.matmul(Q, K_t) / np.sqrt(d_k)
 
     if mask is not None:
-        # Apply large negative value to masked positions
-        attention_scores += (mask * -1e9)
+        attention_scores += mask
 
     # Compute attention weights and final weighted output
     attention_weights = softmax(attention_scores, axis=-1)

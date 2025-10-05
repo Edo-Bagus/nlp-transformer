@@ -15,7 +15,8 @@ Author: <Your Name>
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
-from transformer import Transformer
+from layers import scaled_dot_product_attention
+from transformer import Transformer, create_causal_mask
 from tokenizer import Tokenizer
 
 
@@ -114,6 +115,7 @@ class TransformerGUI:
         """
         Tokenizes the input text, runs forward pass through the NumPy-only
         Transformer, and displays top-5 next-token probabilities.
+        Also performs a simple scaled dot-product attention test for debugging.
         """
         # 1️⃣ Read input
         input_text = self.input_text.get("1.0", tk.END).strip()
@@ -138,13 +140,26 @@ class TransformerGUI:
             prob = probs[0][idx]
             self.tree.insert("", "end", values=(token, f"{prob:.4f}"))
 
-        # 6️⃣ (Optional) Debugging Info
+        print("----- Scaled Dot-Product Attention Debug -----")
+        batch, heads, seq_len, depth = 2, 3, 4, 8
+        Q = K = V = np.random.randn(batch, heads, seq_len, depth)
+        mask = create_causal_mask(seq_len)
+
+        attn_output, attn_weights = scaled_dot_product_attention(Q, K, V, mask)
+        print("Output shape:", attn_output.shape)           # (2, 3, 4, 8)
+        print("Attention weights shape:", attn_weights.shape)  # (2, 3, 4, 4)
+        print("Sum over last axis (softmax):", np.sum(attn_weights, axis=-1))
+        print("Masked positions (should be near 0):", attn_weights[0,0,0,1:])
+        print("----------------------------------------------")
+
+        # 7️⃣ Optional: Print forward pass shapes
         print("----- Model Debug Info -----")
         print(f"Input shape: {encoded_input.shape}")
         print(f"Logits shape: {logits.shape}")
         print(f"Probs shape: {probs.shape}")
         print(f"Sum of probs: {np.sum(probs[0]):.4f}")
         print("-----------------------------")
+
 
 
 # --------------------------------------
